@@ -221,15 +221,15 @@ class Agent:
 
 	def _set_model_names(self) -> None:
 		self.chat_model_library = self.llm.__class__.__name__
-		self.model_name = "Unknown"
+		self.model_name = 'Unknown'
 		# Check for 'model_name' attribute first
-		if hasattr(self.llm, "model_name"):
+		if hasattr(self.llm, 'model_name'):
 			model = self.llm.model_name
-			self.model_name = model if model is not None else "Unknown"
+			self.model_name = model if model is not None else 'Unknown'
 		# Fallback to 'model' attribute if needed
-		elif hasattr(self.llm, "model"):
+		elif hasattr(self.llm, 'model'):
 			model = self.llm.model
-			self.model_name = model if model is not None else "Unknown"
+			self.model_name = model if model is not None else 'Unknown'
 
 		if self.planner_llm:
 			if hasattr(self.planner_llm, 'model_name'):
@@ -291,6 +291,10 @@ class Agent:
 				self.message_manager.add_plan(plan, position=-1)
 
 			input_messages = self.message_manager.get_messages()
+
+			n = 2
+			if self.n_steps % n == 0:
+				await self._ask_for_human_input()
 
 			self._check_if_stopped_or_paused()
 
@@ -354,6 +358,15 @@ class Agent:
 
 			if state:
 				self._make_history_item(model_output, state, result)
+
+	async def _ask_for_human_input(self) -> None:
+		"""Ask for human input"""
+		user_input = input('Continue? (Y/N)')
+		if user_input.lower() == 'n':
+			logger.info(f'Stopping agent after {self.n_steps} steps on human request')
+			self.stop()
+		else:
+			logger.info('Continuing...')
 
 	async def _handle_step_error(self, error: Exception) -> list[ActionResult]:
 		"""Handle all types of errors that can occur during a step"""
@@ -646,6 +659,7 @@ class Agent:
 			"""
 			Validation results.
 			"""
+
 			is_valid: bool
 			reason: str
 
